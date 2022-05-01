@@ -1,6 +1,7 @@
 from scipy.integrate import solve_ivp
 import numpy as np
 import open3d as o3d
+from alive_progress import alive_bar
 
 class pointsGen:
     def __init__(self, a, c = np.ones(3)) -> None:
@@ -106,14 +107,36 @@ class pointsGen:
         viewer.run()
         viewer.destroy_window()
 
-a = np.random.rand(6)*2-1
-print(a)
-a = np.array([0.5*np.pi,0.5*np.pi,0.5*np.pi,-10,10,10])
-points_gen = pointsGen(a=a)
-points_gen.solve_mu()
-points_gen.solve_q()
-points_gen.solve_mj()
-if points_gen.mj_sol.status == 0:
-    points_gen.vis()
-else:
-    print("not optimal")
+def vis(pts):
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(pts)
+    coor = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+
+    viewer = o3d.visualization.Visualizer()
+    viewer.create_window()
+    viewer.add_geometry(pcd)
+    viewer.add_geometry(coor)
+    viewer.run()
+    viewer.destroy_window()
+
+num_case = 0
+gen_cases = np.zeros((10000, 20, 3))
+gen_a = np.zeros((10000, 6))
+with alive_bar(10000) as bar:
+    while num_case < 10000:
+        a = np.concatenate((np.random.rand(3)*2*np.pi-np.pi, np.random.rand(3)*100-50))
+        points_gen = pointsGen(a=a)
+        points_gen.solve_mu()
+        points_gen.solve_q()
+        points_gen.solve_mj()
+        if points_gen.mj_sol.status == 0:
+            t = np.linspace(0,1,20)
+            gen_cases[num_case] = points_gen.q_sol.sol(t).reshape((4,4,-1))[0:3, 3, :].T
+            gen_a[num_case] = a
+            num_case += 1
+            bar()
+        #     points_gen.vis()
+        # else:
+        #     print("not optimal")
+np.save("points.npy", gen_cases)
+np.save("a.npy", gen_a)
