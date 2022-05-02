@@ -120,7 +120,8 @@ def vis(pts):
     viewer.destroy_window()
 
 num_case = 0
-gen_cases = np.zeros((10000, 20, 3))
+num_pts = 50
+gen_cases = np.zeros((10000, num_pts, 16))
 gen_a = np.zeros((10000, 6))
 with alive_bar(10000) as bar:
     while num_case < 10000:
@@ -130,13 +131,14 @@ with alive_bar(10000) as bar:
         points_gen.solve_q()
         points_gen.solve_mj()
         if points_gen.mj_sol.status == 0:
-            t = np.linspace(0,1,20)
-            gen_cases[num_case] = points_gen.q_sol.sol(t).reshape((4,4,-1))[0:3, 3, :].T
+            t = np.linspace(0,1,num_pts)
+            # gen_cases[num_case] = points_gen.q_sol.sol(t).reshape((4,4,-1))[0:3, 3, :].T
+            gen_cases[num_case] = points_gen.q_sol.sol(t).T
             gen_a[num_case] = a
             num_case += 1
             bar()
         #     points_gen.vis()
         # else:
         #     print("not optimal")
-np.save("points.npy", gen_cases)
-np.save("a.npy", gen_a)
+np.save("points_50_se3.npy", gen_cases)
+np.save("a_50_se3.npy", gen_a)
